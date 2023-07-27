@@ -1,62 +1,97 @@
+import 'package:chewie/chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
+import 'package:videoplayer_app/video_controller.dart';
+import 'package:videoplayer_app/video_repository.dart';
 
 void main() {
-  runApp(const VideoApp());
+  runApp(MyApp());
 }
 
-class VideoApp extends StatefulWidget {
-  const VideoApp({super.key});
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Flutter Video Player Demo',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: MainPage(),
+    );
+  }
+}
+
+class MainPage extends StatelessWidget {
+  final videoController = VideoController(repository: VideoRepository());
 
   @override
-  State<VideoApp> createState() => _VideoAppState();
+  Widget build(BuildContext context) {
+    List<String> videos = videoController.getVideos();
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Flutter Video Player Demo'),
+      ),
+      body: ListView.builder(
+        itemCount: videos.length,
+        itemBuilder: (context, index) {
+          return VideoPlayerItem(videoUrl: videos[index]);
+        },
+      ),
+    );
+  }
 }
 
-class _VideoAppState extends State<VideoApp> {
-  late VideoPlayerController _controller;
+class VideoPlayerItem extends StatefulWidget {
+  final String videoUrl;
+
+  VideoPlayerItem({required this.videoUrl});
+
+  @override
+  _VideoPlayerItemState createState() => _VideoPlayerItemState();
+}
+
+class _VideoPlayerItemState extends State<VideoPlayerItem> {
+  late final VideoPlayerController _videoPlayerController;
+  late ChewieController _chewieController;
 
   @override
   void initState() {
     super.initState();
-    _controller = VideoPlayerController.networkUrl(Uri.parse(
-        'https://flutter.github.io/assets-for-api-docs/assets/videos/bee.mp4'))
-      ..initialize().then((value) {
-        setState(() {});
-      });
+    _videoPlayerController =
+        VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl));
+    _chewieController = ChewieController(
+      videoPlayerController: _videoPlayerController,
+      autoPlay: false,
+      looping: false,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Video Demo',
-      home: Scaffold(
-        body: Center(
-          child: _controller.value.isInitialized
-              ? AspectRatio(
-                  aspectRatio: _controller.value.aspectRatio,
-                  child: VideoPlayer(_controller),
-                )
-              : Container(),
-        ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () {
-            setState(() {
-              _controller.value.isPlaying
-                  ? _controller.pause()
-                  : _controller.play();
-            });
-          },
-          child: Icon(
-            _controller.value.isPlaying ? Icons.pause : Icons.play_arrow,
-          ),
-        ),
-      ),
+    return Chewie(
+      controller: _chewieController,
     );
   }
 
   @override
   void dispose() {
+    _videoPlayerController.dispose();
+    _chewieController.dispose();
     super.dispose();
-    _controller.dispose();
+  }
+}
+
+class VideoList extends StatelessWidget {
+  final videoController = VideoController(repository: VideoRepository());
+
+  @override
+  Widget build(BuildContext context) {
+    List<String> videos = videoController.getVideos();
+    return ListView.builder(
+      itemCount: videos.length,
+      itemBuilder: (context, index) {
+        return VideoPlayerItem(videoUrl: videos[index]);
+      },
+    );
   }
 }
