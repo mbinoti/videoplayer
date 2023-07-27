@@ -1,3 +1,3 @@
 # videoplayer_app
 
-A new Flutter project.
+app exemplo de uso do package video_player.
